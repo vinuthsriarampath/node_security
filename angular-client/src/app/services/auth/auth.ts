@@ -29,4 +29,8 @@ export class Auth {
         })
       );
   }
+
+  getAccessToken(): string | null {
+    return this.accessToken$.value;
+  }
 }

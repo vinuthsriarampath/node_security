@@ -2,7 +2,7 @@
     <h1>🎉 Welcome Back!</h1>
     <p>You’ve successfully logged in. Let’s make today productive!</p>
     <button class="logout-btn" onclick="logout()">Logout</button>
-    <div class="user-box" id="userBox">
-        {{ currentUser | json }}
-    </div>
+    <div class="user-box">
+        {{ currentUser$ | async | json}}
+    </div>      
 </div>
