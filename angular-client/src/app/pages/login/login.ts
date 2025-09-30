@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { Auth } from '../../services/auth/auth';
 
 @Component({
   selector: 'app-login',
@@ -9,11 +10,22 @@ import { RouterLink } from '@angular/router';
   styleUrl: './login.css'
 })
 export class Login {
-  public email:string = '' ;
-  public password: string = '';
+  credentials = {
+    email: '',
+    password: '',
+  }
+
+  constructor(private readonly auth:Auth, private readonly router:Router){}
 
   onSubmit() {
-    throw new Error('Method not implemented.');
+    this.auth.login(this.credentials).subscribe({
+      next: ()=> {
+        this.router.navigate(['dashboard'])
+      },
+      error: (err)=>{
+        alert(err)
+      }
+    })
   }
 
 }

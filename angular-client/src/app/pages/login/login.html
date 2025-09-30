@@ -3,11 +3,11 @@
     <form id="loginForm" (submit)="onSubmit()">
         <div class="input-group">
             <label for="email">Email</label>
-            <input type="email" [(ngModel)]="email" id="email" required />
+            <input type="email" name="email" [(ngModel)]="credentials.email" id="email" required />
         </div>
         <div class="input-group">
             <label for="password">Password</label>
-            <input type="password" [(ngModel)]="password" id="password" required />
+            <input type="password" name="password" [(ngModel)]="credentials.password" id="password" required />
         </div>
         <button type="submit" class="login-btn">Login</button>
     </form>
