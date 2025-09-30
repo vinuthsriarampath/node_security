@@ -3,6 +3,8 @@ dotenv.config();
 import express from 'express';
 import indexRoute from './routes/index-route.js';
 import cors from 'cors';
+import passport from 'passport';
+import './config/passport.js';
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.use(cors({
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     credentials: true,
 }))
+
+app.use(passport.initialize());
 
 app.use('/api',indexRoute);
 
