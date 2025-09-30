@@ -1,5 +1,5 @@
 import * as userValidator from '../validators/user-registration-validation-schema.js';
-import * as userService from '../services/user-service.js';
+import * as userService from '../services/auth-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
 import { UserDto } from '../dtos/user-Dto.js';
