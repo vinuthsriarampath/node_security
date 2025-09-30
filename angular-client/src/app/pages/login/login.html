@@ -1,0 +1,26 @@
+<div class="login-container">
+    <h2>Login</h2>
+    <form id="loginForm" (submit)="onSubmit()">
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" [(ngModel)]="email" id="email" required />
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" [(ngModel)]="password" id="password" required />
+        </div>
+        <button type="submit" class="login-btn">Login</button>
+    </form>
+    <div class="links">
+        <a routerLink="register">New User ?</a>
+    </div>
+
+    <div class="divider">or continue with</div>
+
+    <button class="social-btn google"
+        onclick="window.location.href='https://accounts.google.com/o/oauth2/v2/auth'">Continue with Google</button>
+    <button class="social-btn facebook"
+        onclick="window.location.href='https://www.facebook.com/v10.0/dialog/oauth'">Continue with Facebook</button>
+    <button class="social-btn github" onclick="window.location.href='https://github.com/login/oauth/authorize'">Continue
+        with GitHub</button>
+</div>
