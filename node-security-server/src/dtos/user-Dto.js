@@ -1,6 +1,9 @@
 export class UserDto {
     constructor(user) {
-        this.id = user._id;
+        if (!user) {
+            throw new Error('User data is required');
+        }
+        this.id = user._id.toString();
         this.email = user.email;
         this.firstName = user.firstName;
         this.lastName = user.lastName;

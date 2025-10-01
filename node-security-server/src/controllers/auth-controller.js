@@ -3,7 +3,6 @@ import * as authService from '../services/auth-service.js';
 import * as userService from '../services/user-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
-import { UserDto } from '../dtos/user-Dto.js';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.js';
 
 export const register = async (req, res, next) => {
