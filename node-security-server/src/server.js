@@ -1,7 +1,13 @@
 import app from './app.js';
 import mongoose from 'mongoose';
+import { createClient } from 'redis';
 
 const PORT = process.env.PORT;
+
+//CONNECTING TO REDIS
+export const redisClient = createClient({url:process.env.REDIS_URL});
+redisClient.on('error', err => console.error('Redis Client Error', err));
+await redisClient.connect(); // Connect asynchronously
 
 // CONECTING TO MONGO DATABSE 
 mongoose.connect(process.env.MONGO_URL)
@@ -10,5 +16,5 @@ mongoose.connect(process.env.MONGO_URL)
 
 // STARTS THE SERVER
 app.listen(PORT,()=>{
-    console.log(`ServerS running on http://localhost:${PORT}/`)
+    console.log(`Server running on http://localhost:${PORT}/`)
 })

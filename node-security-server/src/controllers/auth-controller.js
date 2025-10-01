@@ -4,6 +4,7 @@ import * as userService from '../services/user-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.js';
+import { redisClient } from '../server.js';
 
 export const register = async (req, res, next) => {
     try {
@@ -47,7 +48,7 @@ export const login = async (req, res, next) => {
     })(req, res, next);
 }
 
-export const refreshToken =async (req, res) => {
+export const refreshToken = async (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ message: "No refresh token" });
 
@@ -75,7 +76,23 @@ export const refreshToken =async (req, res) => {
 }
 
 
-export const logout =  async (req,res)=>{
-    res.clearCookie("refreshToken" , { path: 'api/auth' });
-    res.json({message: "Logged out!"})
+export const logout = async (req, res) => {
+    const token = req.cookies.refreshToken;
+    if (token) {
+        try {
+            // Blacklist the refresh token in Redis (revocation; expires automatically after token's remaining time)
+            const decoded = verifyToken(token); // Decode without verify to get exp
+            if (decoded && decoded.exp) {
+                const ttl = decoded.exp - Math.floor(Date.now() / 1000); // Remaining seconds
+                if (ttl > 0) {
+                    await redisClient.set(`blacklist:${token}`, 'true', { EX: ttl });
+                    console.log(`Blacklisted token in Redis: blacklist:${token} with TTL ${ttl}s`); // Added: Log for verification
+                }
+            }
+        } catch (err) {
+            throw new ApiError(500,`Error blacklisting token: ${err}`)
+        }
+    }
+    res.clearCookie("refreshToken", { path: 'api/auth' });
+    res.json({ message: "Logged out!" })
 }
