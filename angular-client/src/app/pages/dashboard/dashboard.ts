@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { UserService } from '../../services/user/user-service';
 import { catchError, last, Observable, of } from 'rxjs';
 import { Auth } from '../../services/auth/auth';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,7 +19,7 @@ export class Dashboard {
 
   currentUser$: Observable<any>;
 
-  constructor(private readonly userService:UserService,private readonly authService:Auth){
+  constructor(private readonly userService:UserService,private readonly authService:Auth , private readonly router:Router ){
     this.currentUser$=this.userService.getCurrentUser().pipe(
       catchError(err => {
         alert(err.message);
@@ -31,6 +32,7 @@ export class Dashboard {
     this.authService.logout().subscribe({
       next:(res)=>{
         console.info(res);
+        this.router.navigate(['']);
         alert(res.message);
       },
       error:(err)=>{

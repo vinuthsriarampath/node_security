@@ -56,6 +56,7 @@ function handle401Error(auth: Auth,request:HttpRequest<any>, next: HttpHandlerFn
       }),
       catchError((err) => {
         isRefreshing = false;
+        auth.logout().subscribe();
         return throwError(() => err); // if again failed throw the error
       })
     );
