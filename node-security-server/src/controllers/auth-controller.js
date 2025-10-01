@@ -52,6 +52,10 @@ export const refreshToken = async (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ message: "No refresh token" });
 
+    // Check if token is blacklisted (revocation; industry standard using Redis for fast, expiring storage)
+    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+    if (isBlacklisted) return res.status(403).json({ message: "Refresh token is blacklisted!" });
+
     try {
         const decoded = verifyToken(token);
 
