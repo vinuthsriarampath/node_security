@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-
+import crypto from 'crypto';
 
 export const generateAccessToken = (user) => {
     return jwt.sign(
@@ -9,12 +9,17 @@ export const generateAccessToken = (user) => {
     );
 };
 
-export const generateRefreshToken = (user) => {
+export const generateRefreshToken = (user,fingerprint) => {
     return jwt.sign(
-        { id: user.id }, 
+        { id: user.id, fingerprint }, 
         process.env.JWT_SECRET, 
         { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN }
     );
+};
+
+// Generate a device/browser fingerprint (hash of user-agent for binding; industry standard for token binding to prevent theft usage on other devices)
+export const generateFingerprint = (userAgent) => {
+    return crypto.createHash('sha256').update(userAgent || 'unknown').digest('hex');
 };
 
 export const verifyToken = (token) => {

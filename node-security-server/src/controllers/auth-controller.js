@@ -3,7 +3,7 @@ import * as authService from '../services/auth-service.js';
 import * as userService from '../services/user-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
-import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.js';
+import { generateAccessToken, generateFingerprint, generateRefreshToken, verifyToken } from '../utils/jwt.js';
 import { redisClient } from '../server.js';
 
 export const register = async (req, res, next) => {
@@ -27,12 +27,15 @@ export const login = async (req, res, next) => {
 
             // Returns the error thrown by the passport.js 
             if (loginErr) return next(loginErr);
+            
+            // Generate fingerprint based on user-agent header
+            const fingerprint = generateFingerprint(req.headers['user-agent']);
 
             // Generate a short lived access token if user is successfully authenticated
             const accessToken = generateAccessToken(user);
 
-            //Generate a long lived refresh token
-            const refreshToken = generateRefreshToken(user);
+            // Generate a long lived refresh token
+            const refreshToken = generateRefreshToken(user,fingerprint);
 
             // Set the refresh token as a cookie in the response
             res.cookie('refreshToken', refreshToken, {
@@ -59,12 +62,21 @@ export const refreshToken = async (req, res) => {
     try {
         const decoded = verifyToken(token);
 
+        // Added: Verify fingerprint matches current request (ensures token bound to same client/device)
+        const currentFingerprint = generateFingerprint(req.headers['user-agent']);
+        if (decoded.fingerprint !== currentFingerprint) {
+            return res.status(403).json({ message: "Invalid device fingerprint" });
+        }
+
         // Find the user to ensure they still exist
         const user = await userService.getUserById(decoded.id);
         if (!user) return res.status(403).json({ message: "User not found" });
 
+        // Regenerate fingerprint for new refresh token (rotation)
+        const newFingerprint = generateFingerprint(req.headers['user-agent']);
+
         const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
+        const refreshToken = generateRefreshToken(user,newFingerprint);
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
