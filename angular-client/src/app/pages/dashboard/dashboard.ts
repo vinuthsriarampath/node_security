@@ -2,6 +2,7 @@ import { AsyncPipe, CommonModule, JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { UserService } from '../../services/user/user-service';
 import { catchError, last, Observable, of } from 'rxjs';
+import { Auth } from '../../services/auth/auth';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,12 +18,24 @@ export class Dashboard {
 
   currentUser$: Observable<any>;
 
-  constructor(private readonly userService:UserService){
+  constructor(private readonly userService:UserService,private readonly authService:Auth){
     this.currentUser$=this.userService.getCurrentUser().pipe(
       catchError(err => {
         alert(err.message);
         return of(null); // Fallback to null or empty object on error
       })
     );
+  }
+
+  logout(){
+    this.authService.logout().subscribe({
+      next:(res)=>{
+        console.info(res);
+        alert(res.message);
+      },
+      error:(err)=>{
+        console.error(err.message);
+      }
+    })
   }
 }

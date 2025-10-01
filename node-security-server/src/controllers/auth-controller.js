@@ -73,3 +73,9 @@ export const refreshToken =async (req, res) => {
         new ApiError(401, error.message);
     }
 }
+
+
+export const logout =  async (req,res)=>{
+    res.clearCookie("refreshToken" , { path: 'api/auth' });
+    res.json({message: "Logged out!"})
+}

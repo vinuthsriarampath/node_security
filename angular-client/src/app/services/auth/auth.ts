@@ -44,6 +44,19 @@ export class Auth {
       );
   }
 
+  logout(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true })
+      .pipe(
+        tap(() => this.clearAuth()),
+        catchError(err => {
+          // Improved: Handle logout errors gracefully (e.g., if already revoked)
+          console.error('Logout error:', err);
+          this.clearAuth();
+          return throwError(() => err);
+        })
+      );
+  }
+
   private clearAuth(): void {
     this.accessToken$.next(null); // clear the access token from the accessToken$ variable
   }
