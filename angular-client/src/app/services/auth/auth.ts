@@ -30,7 +30,29 @@ export class Auth {
       );
   }
 
+  refreshToken(): Observable<{ accessToken: string }> {
+    return this.http.post<{ accessToken: string }>(`${this.apiUrl}/refresh`, {}, { withCredentials: true })
+      .pipe(
+        tap(res => {
+          this.accessToken$.next(res.accessToken); // set the access token to the accessToken$ variable if the token is refreshed successfully
+        }),
+        catchError(err => {
+          let errorMessage = err.error?.message || 'Refresh failed';
+          this.clearAuth();
+          return throwError(() => new Error(errorMessage));
+        })
+      );
+  }
+
+  private clearAuth(): void {
+    this.accessToken$.next(null); // clear the access token from the accessToken$ variable
+  }
+
   getAccessToken(): string | null {
     return this.accessToken$.value;
+  }
+
+  isLoggedIn(): boolean {
+    return !!this.accessToken$.value; // return true if the access token is not null
   }
 }
