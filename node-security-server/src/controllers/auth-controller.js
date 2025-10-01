@@ -1,16 +1,17 @@
 import * as userValidator from '../validators/user-registration-validation-schema.js';
-import * as userService from '../services/auth-service.js';
+import * as authService from '../services/auth-service.js';
+import * as userService from '../services/user-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
 import { UserDto } from '../dtos/user-Dto.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.js';
 
-export const register = async (req,res,next) => {
+export const register = async (req, res, next) => {
     try {
         const { error } = userValidator.userRegistrationSchema.validate(req.body);
         if (error) throw new ApiError(400, error.details[0].message);
 
-        const userDto = await userService.register(req.body);
+        const userDto = await authService.register(req.body);
         res.status(201).json(userDto);
 
     } catch (error) {
@@ -18,7 +19,7 @@ export const register = async (req,res,next) => {
     }
 }
 
-export const login = (req, res, next) => {
+export const login = async (req, res, next) => {
     passport.authenticate('local', (err, user, info) => {
         if (err) return next(err);
         if (!user) return res.status(401).json({ message: info?.message || 'Unauthorized' });
@@ -34,8 +35,8 @@ export const login = (req, res, next) => {
             const refreshToken = generateRefreshToken(user);
 
             // Set the refresh token as a cookie in the response
-            res.cookie('refreshToken',refreshToken, {
-                httpOnly:true, // This is to prevent the cookie from being accessed by the client side javascript
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true, // This is to prevent the cookie from being accessed by the client side javascript
                 secure: process.env.NODE_ENV === 'production', // This is to ensure that the cookie is only sent over HTTPS in production
                 sameSite: 'Strict', // This is to prevent CSRF attacks
                 path: '/api/auth', // This is the path that the refresh token will be sent to
@@ -45,4 +46,31 @@ export const login = (req, res, next) => {
             return res.json({ accessToken });
         });
     })(req, res, next);
+}
+
+export const refreshToken =async (req, res) => {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.status(401).json({ message: "No refresh token" });
+
+    try {
+        const decoded = verifyToken(token);
+
+        // Find the user to ensure they still exist
+        const user = await userService.getUserById(decoded.id);
+        if (!user) return res.status(403).json({ message: "User not found" });
+
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: "Strict",
+            path: "/api/auth"
+        });
+
+        res.json({ accessToken });
+    } catch (error) {
+        new ApiError(401, error.message);
+    }
 }
