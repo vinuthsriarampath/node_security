@@ -26,6 +26,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error:HttpErrorResponse)=>{
 
+      if (error.status === 429) {
+        const rateLimitMsg = error.error?.message || 'Too many requests - please wait and try again.';
+        console.warn('Rate limited:', rateLimitMsg);
+        return throwError(() => new Error(rateLimitMsg));  // Could alert user here if desired
+      }
+
       if(error.status === 401 && token){ // if requests fails with 401 it will retry the reqest again
         return handle401Error(auth, authReq, next);
       }
