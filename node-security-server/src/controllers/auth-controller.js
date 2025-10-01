@@ -3,7 +3,7 @@ import * as userService from '../services/auth-service.js';
 import { ApiError } from '../exceptions/api-error.js';
 import passport from 'passport';
 import { UserDto } from '../dtos/user-Dto.js';
-import { generateAccessToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 
 export const register = async (req,res,next) => {
     try {
@@ -29,6 +29,18 @@ export const login = (req, res, next) => {
 
             // Generate a short lived access token if user is successfully authenticated
             const accessToken = generateAccessToken(user);
+
+            //Generate a long lived refresh token
+            const refreshToken = generateRefreshToken(user);
+
+            // Set the refresh token as a cookie in the response
+            res.cookie('refreshToken',refreshToken, {
+                httpOnly:true, // This is to prevent the cookie from being accessed by the client side javascript
+                secure: process.env.NODE_ENV === 'production', // This is to ensure that the cookie is only sent over HTTPS in production
+                sameSite: 'Strict', // This is to prevent CSRF attacks
+                path: '/api/auth', // This is the path that the refresh token will be sent to
+                // maxAge: 1000 * 60 * 60 * 24 * 30  this is handled by the JWT itself
+            });
 
             return res.json({ accessToken });
         });

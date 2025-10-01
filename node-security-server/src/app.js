@@ -5,16 +5,17 @@ import indexRoute from './routes/index-route.js';
 import cors from 'cors';
 import passport from 'passport';
 import './config/passport.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
 app.use(express.json());
-console.log(process.env.FRONTEND_URL)
+app.use(cookieParser()); // Parse cookies from the request (this allow us to access the cookies in the request)
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-    credentials: true,
-}))
+    origin: process.env.FRONTEND_URL, // Allow requests from this URL
+    methods: ['GET','POST','PUT','DELETE','OPTIONS'], // Allow these methods to be used in the request
+    credentials: true, // Allow cookies to be sent in the request
+}));
 
 app.use(passport.initialize());
 
