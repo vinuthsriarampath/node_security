@@ -40,12 +40,32 @@ export const handleSocialLogin = async (provider, profile) => {
       user = await userRepo.findById(user._id);
 
     } else {
-      // Create new user
+      // Handle GitHub and Google profile differences
+      let email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
+      let firstName = null;
+      let lastName = null;
+
+      if (profile.provider === 'github') {
+        // GitHub: no name.givenName/familyName, use displayName or username
+        if (profile.displayName) {
+          // Try to split displayName into first/last
+          const nameParts = profile.displayName.split(' ');
+          firstName = nameParts[0];
+          lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        } else if (profile.username) {
+          firstName = profile.username;
+          lastName = '';
+        }
+      } else if (profile.provider === 'google') {
+        // Google: has name.givenName/familyName
+        firstName = profile.name?.givenName || '';
+        lastName = profile.name?.familyName || '';
+      }
+
       user = await userRepo.create({
-        email: profile.emails[0].value,
-        firstName: profile.name.givenName,
-        lastName: profile.name.familyName,
-        // Other fields null or from profile if available
+        email,
+        firstName,
+        lastName,
         providers: [{ provider, providerId: profile.id }]
       });
     }
