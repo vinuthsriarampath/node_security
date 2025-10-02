@@ -18,12 +18,37 @@ export const findByEmail = async (email) => {
   
   // Add provider to user
   export const addProvider = async (userId, provider, providerId) => {
-    return User.updateOne({ _id: userId }, { $push: { providers: { provider, providerId } } });
+    try {
+      // First, check if the provider already exists
+      const existingUser = await User.findOne({
+        _id: userId,
+        'providers.provider': provider
+      });
+
+      if (existingUser) {
+        // Provider exists, update the providerId
+        const result = await User.updateOne(
+          { _id: userId, 'providers.provider': provider },
+          { $set: { 'providers.$.providerId': providerId } }
+        );
+      } else {
+        // Provider doesn't exist, add it
+        const result = await User.updateOne(
+          { _id: userId },
+          { $push: { providers: { provider, providerId } } }
+        );
+      }
+
+      // Return the updated user
+      return await User.findById(userId);
+    } catch (error) {
+      throw error;
+    }
   };
   
   // Update user
   export const update = async (userId, updates) => {
-    return User.updateOne({ _id: userId }, updates);
+    return User.updateOne({ _id: userId }, { $set: updates });
   };
   
   // Find user by id
