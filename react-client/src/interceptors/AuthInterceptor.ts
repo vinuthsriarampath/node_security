@@ -1,21 +1,35 @@
 import axios from 'axios';
 import { refreshToken } from '../services/AuthService';
+// Import globals object from the separate file
+import { authGlobals } from '../context/AuthGlobals';
 
 let isRefreshing = false;
-let failedQueue: any[] = [];
+let failedQueue: { resolve: (token: string) => void; reject: (err: any) => void }[] = []; // Typed queue
 
-const processQueue = (error: any) => {
+const processQueue = (error: any = null) => {
   failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve();
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(authGlobals.getAccessToken() || ''); // Resolve with current token
+    }
   });
   failedQueue = [];
 };
 
+// Request interceptor: Add token if available (skip for auth endpoints)
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken'); // We'll update to use context later
-    if (token && !config.url?.includes('/auth/login') && !config.url?.includes('/auth/register') && !config.url?.includes('/auth/refresh')) {
+    if (
+      config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/register') ||
+      config.url?.includes('/auth/refresh')
+    ) {
+      return config; // Skip adding token for these
+    }
+
+    const token = authGlobals.getAccessToken();
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -23,19 +37,23 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Response interceptor: Handle 401 by refreshing token
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response.status === 429) {
+    // Handle rate limiting (429)
+    if (error.response?.status === 429) {
       const rateLimitMsg = error.response.data?.message || 'Too many requests - please wait and try again.';
       console.warn('Rate limited:', rateLimitMsg);
       return Promise.reject(new Error(rateLimitMsg));
     }
 
-    if (error.response.status === 401 && !originalRequest._retry) {
+    // Handle unauthorized (401)
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
+        // If refresh is in progress, queue the request
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -51,14 +69,14 @@ axios.interceptors.response.use(
 
       try {
         const { accessToken: newToken } = await refreshToken();
-        localStorage.setItem('accessToken', newToken); // Temp; update to context
+        authGlobals.setAccessToken(newToken); // Update in-memory via global setter
         axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        processQueue(null);
+        processQueue(); // Process queued requests with new token
         return axios(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Logout logic here if needed
+        // Optionally trigger logout here if refresh fails completely
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
