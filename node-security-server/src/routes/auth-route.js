@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { login, register, refreshToken, logout, googleCallback } from '../controllers/auth-controller.js';
+import { login, register, refreshToken, logout, socialCallback } from '../controllers/auth-controller.js';
 import { loginRateLimit, registerRateLimit } from '../middlewares/ratelimit-middleware.js';
 
 const router =  express.Router();

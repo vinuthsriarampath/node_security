@@ -2,11 +2,12 @@ import dotenv from 'dotenv';
 dotenv.config()
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import GoogleStrategy from 'passport-google-oauth20';
+import GitHubStrategy from  'passport-github2';
 import bcrypt from 'bcryptjs';
 import * as authService from '../services/auth-service.js';
 import * as userRepo from '../repositories/user-repositories.js'
 import { UserDto } from '../dtos/user-Dto.js';
-import GoogleStrategy from 'passport-google-oauth20';
 
 //No need the becuase here we don't use sessions following is only required if we are using sessions
 // Serialize user to session (store ID) 
@@ -45,6 +46,21 @@ passport.use(new GoogleStrategy({
 }, async (_accessToken, _refreshToken, profile, done) => {
     try {
         const user = await authService.handleSocialLogin('google', profile);
+        done(null, user);
+    } catch (err) {
+        done(err);
+    }
+}));
+
+
+// GitHub strategy
+passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: '/api/auth/github/callback'
+}, async (_accessToken, _refreshToken, profile, done) => {
+    try {
+        const user = await authService.handleSocialLogin('github', profile);
         done(null, user);
     } catch (err) {
         done(err);
