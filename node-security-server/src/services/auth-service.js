@@ -22,6 +22,7 @@ export const handleSocialLogin = async (provider, profile) => {
   let user = await userRepo.findByProvider(provider, profile.id);
 
   if (!user) {
+    console.log(profile);
     // Check by email (industry standard to link/merge)
     user = await userRepo.findByEmail(profile.emails[0].value);
     if (user) {
@@ -40,6 +41,7 @@ export const handleSocialLogin = async (provider, profile) => {
       user = await userRepo.findById(user._id);
 
     } else {
+      console.log(profile);
       // Handle GitHub and Google profile differences
       let email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
       let firstName = null;
@@ -60,6 +62,8 @@ export const handleSocialLogin = async (provider, profile) => {
         // Google: has name.givenName/familyName
         firstName = profile.name?.givenName || '';
         lastName = profile.name?.familyName || '';
+      } else if(provider === 'facebook'){
+        console.log(profile);
       }
 
       user = await userRepo.create({

@@ -4,6 +4,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import GoogleStrategy from 'passport-google-oauth20';
 import GitHubStrategy from  'passport-github2';
+import FacebookStrategy from 'passport-facebook';
 import bcrypt from 'bcryptjs';
 import * as authService from '../services/auth-service.js';
 import * as userRepo from '../repositories/user-repositories.js'
@@ -61,6 +62,21 @@ passport.use(new GitHubStrategy({
 }, async (_accessToken, _refreshToken, profile, done) => {
     try {
         const user = await authService.handleSocialLogin('github', profile);
+        done(null, user);
+    } catch (err) {
+        done(err);
+    }
+}));
+
+// Facebook strategy
+passport.use(new FacebookStrategy({
+    clientID: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    callbackURL: '/api/auth/facebook/callback',
+    profileFields: ['id', 'emails', 'name', 'displayName', 'photos'] 
+}, async (_accessToken, _refreshToken, profile, done) => {
+    try {
+        const user = await authService.handleSocialLogin('facebook', profile);
         done(null, user);
     } catch (err) {
         done(err);
