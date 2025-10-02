@@ -27,10 +27,18 @@ export const handleSocialLogin = async (provider, profile) => {
     if (user) {
       // Link provider to existing account
       await userRepo.addProvider(user._id, provider, profile.id);
-      // Update profile if needed (e.g., name)
-      user.firstName = user.firstName || profile.name.givenName;
-      user.lastName = user.lastName || profile.name.familyName;
-      await userRepo.update(user._id, user);
+
+      // Prepare only the updates you want
+      const updates = {
+        firstName: user.firstName || profile.name.givenName,
+        lastName: user.lastName || profile.name.familyName,
+      };
+
+      await userRepo.update(user._id, updates);
+
+      // Refresh user from DB
+      user = await userRepo.findById(user._id);
+
     } else {
       // Create new user
       user = await userRepo.create({
