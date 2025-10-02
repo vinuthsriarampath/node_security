@@ -27,7 +27,7 @@ export const login = async (req, res, next) => {
 
             // Returns the error thrown by the passport.js 
             if (loginErr) return next(loginErr);
-            
+
             // Generate fingerprint based on user-agent header
             const fingerprint = generateFingerprint(req.headers['user-agent']);
 
@@ -35,7 +35,7 @@ export const login = async (req, res, next) => {
             const accessToken = generateAccessToken(user);
 
             // Generate a long lived refresh token
-            const refreshToken = generateRefreshToken(user,fingerprint);
+            const refreshToken = generateRefreshToken(user, fingerprint);
 
             // Set the refresh token as a cookie in the response
             res.cookie('refreshToken', refreshToken, {
@@ -76,7 +76,7 @@ export const refreshToken = async (req, res) => {
         const newFingerprint = generateFingerprint(req.headers['user-agent']);
 
         const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user,newFingerprint);
+        const refreshToken = generateRefreshToken(user, newFingerprint);
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
@@ -106,9 +106,29 @@ export const logout = async (req, res) => {
                 }
             }
         } catch (err) {
-            throw new ApiError(500,`Error blacklisting token: ${err}`)
+            throw new ApiError(500, `Error blacklisting token: ${err}`)
         }
     }
     res.clearCookie("refreshToken", { path: 'api/auth' });
     res.json({ message: "Logged out!" })
+}
+
+
+export const googleCallback = (req, res) => {
+
+    // Added: Generate fingerprint for Google login as well
+    const fingerprint = generateFingerprint(req.headers['user-agent']);
+
+    const refreshToken = generateRefreshToken(req.user, fingerprint);
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: "Strict", // Updated to "Strict"
+        path: "/api/auth/refresh"
+    });
+
+    // Redirect to SPA with token in URL fragment (or just let SPA call refresh endpoint)
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+
 }
