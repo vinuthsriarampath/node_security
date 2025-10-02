@@ -114,9 +114,9 @@ export const logout = async (req, res) => {
 }
 
 
-export const googleCallback = (req, res) => {
+export const socialCallback = (req, res) => {
 
-    // Added: Generate fingerprint for Google login as well
+    // Added: Generate fingerprint for Social login as well
     const fingerprint = generateFingerprint(req.headers['user-agent']);
 
     const refreshToken = generateRefreshToken(req.user, fingerprint);
@@ -125,7 +125,7 @@ export const googleCallback = (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: "Strict", // Updated to "Strict"
-        path: "/api/auth/refresh"
+        path: "/api/auth"
     });
 
     // Redirect to SPA with token in URL fragment (or just let SPA call refresh endpoint)
