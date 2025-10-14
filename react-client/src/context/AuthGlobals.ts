@@ -3,6 +3,7 @@
 // which requires files to export only React components for proper fast refresh in development.
 
 export const authGlobals = {
-    getAccessToken: (): string | null => null,
-    setAccessToken: ( token: string | null): void => { void token; },
+    accessToken: null as string | null,
+    getAccessToken: () => authGlobals.accessToken,
+    setAccessToken: (token: string | null) => { authGlobals.accessToken = token; },
 };

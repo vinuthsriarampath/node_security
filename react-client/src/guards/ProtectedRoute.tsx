@@ -1,29 +1,27 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../services/AuthService';
-import { refreshToken } from '../services/AuthService';
+import { Navigate, Outlet } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../services/AuthService";
 
-const ProtectedRoute = () => {
-  const { isLoggedIn, setAccessToken } = useAuth();
-  const navigate = useNavigate();
+export default function ProtectedRoute() {
+  const { isLoggedIn, initializing } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!isLoggedIn()) {
-        try {
-          const { accessToken } = await refreshToken();
-          setAccessToken(accessToken);
-          console.log('Auth guard: Refresh succeeded, allowing access');
-        } catch (err) {
-          console.log('Auth guard: Refresh failed, redirecting to login');
-          navigate('/');
-        }
-      }
+    const checkAuthentication = async () => {
+      if (initializing) return;
+      const res = await isLoggedIn();
+      setIsAuthenticated(res);
     };
-    checkAuth();
-  }, [isLoggedIn, setAccessToken, navigate]);
+    checkAuthentication();
+  }, [initializing, isLoggedIn]);
 
-  return isLoggedIn() ? <Outlet /> : null; // Or loading spinner
-};
+  if (initializing || isAuthenticated === null) {
+    return <div>Loading...</div>; // Or a more styled loading spinner/component
+  }
 
-export default ProtectedRoute;
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
+}

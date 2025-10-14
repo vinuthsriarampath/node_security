@@ -47,11 +47,33 @@ axios.interceptors.response.use(
     if (error.response?.status === 429) {
       const rateLimitMsg = error.response.data?.message || 'Too many requests - please wait and try again.';
       console.warn('Rate limited:', rateLimitMsg);
+      // You could emit a global event here for UI notification
       return Promise.reject(new Error(rateLimitMsg));
+    }
+
+    // Handle network errors
+    if (!error.response) {
+      const networkError = new Error('Network error - please check your connection');
+      console.error('Network error:', networkError);
+      return Promise.reject(networkError);
+    }
+
+    // Handle server errors (5xx)
+    if (error.response?.status >= 500) {
+      const serverError = new Error('Server error - please try again later');
+      console.error('Server error:', error.response);
+      return Promise.reject(serverError);
     }
 
     // Handle unauthorized (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (
+        originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/register') ||
+        originalRequest.url?.includes('/auth/refresh')
+      ) {
+        return;
+      }
       if (isRefreshing) {
         // If refresh is in progress, queue the request
         return new Promise((resolve, reject) => {
