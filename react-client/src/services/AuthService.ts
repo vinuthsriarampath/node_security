@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useContext } from 'react';
-import  AuthContext  from '../context/AuthContext';
+import AuthContext from '../context/AuthContext';
 
 const apiUrl = 'http://localhost:8080/api/auth';
 
